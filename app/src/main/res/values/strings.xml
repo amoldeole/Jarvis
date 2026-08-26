@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Phone Guardian</string>
+    <string name="app_short_name">Guardian</string>
+    <string name="accessibility_service_description">Optional Jarvis controls for visible Back, Home, scroll and click actions. This service never reads or uploads private content.</string>
+    <string name="storage_widget_name">Storage</string>
+</resources>
