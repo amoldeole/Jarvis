@@ -15,6 +15,8 @@ import androidx.work.WorkManager
 import com.jarvis.phoneguardian.PhoneGuardianApplication
 import com.jarvis.phoneguardian.assistant.AssistantIntent
 import com.jarvis.phoneguardian.assistant.IntentParser
+import com.jarvis.phoneguardian.core.ai.DisabledAIProvider
+import com.jarvis.phoneguardian.core.ai.LocalMetadataAIProvider
 import com.jarvis.phoneguardian.core.backup.BackupProgress
 import com.jarvis.phoneguardian.core.backup.ContactBackupManager
 import com.jarvis.phoneguardian.core.cleanup.EmptyFolder
@@ -129,7 +131,10 @@ class GuardianViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun buildOrganizationPreview() {
-        viewModelScope.launch { _organization.value = organizer.buildPreview() }
+        viewModelScope.launch {
+            val provider = if (settings.aiMode == "local") LocalMetadataAIProvider() else DisabledAIProvider()
+            _organization.value = organizer.buildPreview(provider)
+        }
     }
 
     fun approveOrganization(destinationTree: Uri, selected: List<OrganizationSuggestion> = organization.value) {

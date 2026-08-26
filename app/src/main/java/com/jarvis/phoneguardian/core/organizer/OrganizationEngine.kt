@@ -1,5 +1,7 @@
 package com.jarvis.phoneguardian.core.organizer
 
+import com.jarvis.phoneguardian.core.ai.AIProvider
+import com.jarvis.phoneguardian.core.ai.DisabledAIProvider
 import com.jarvis.phoneguardian.core.database.AppDatabase
 import com.jarvis.phoneguardian.core.model.FileEntity
 import com.jarvis.phoneguardian.core.model.MediaTypes
@@ -11,20 +13,24 @@ import kotlinx.coroutines.withContext
 
 /** Builds a reviewable plan only. It never touches a file. */
 class OrganizationEngine(private val database: AppDatabase) {
-    suspend fun buildPreview(): List<OrganizationSuggestion> = withContext(Dispatchers.Default) {
+    suspend fun buildPreview(aiProvider: AIProvider = DisabledAIProvider()): List<OrganizationSuggestion> = withContext(Dispatchers.Default) {
         val protections = database.protectionDao().getAll()
-        database.fileDao().getAll().asSequence()
+        val candidates = database.fileDao().getAll()
             .filter { file -> !file.isProtected && !FolderSafety.isLikelyUserCreated(file.displayPath) && protections.none { it.state == "protected" && file.displayPath.startsWith(it.key) } }
             .filter { it.mediaType != MediaTypes.OTHER }
-            .map { file ->
-                val (label, destination) = FileClassifier.destinationFor(file)
-                OrganizationSuggestion(
-                    source = file,
-                    destinationLabel = label,
-                    destinationPath = destination,
-                    reason = reasonFor(file, label)
-                )
-            }.toList()
+        val aiCategories = aiProvider.classify(candidates)
+        candidates.map { file ->
+            val (ruleLabel, ruleDestination) = FileClassifier.destinationFor(file)
+            val aiLabel = aiCategories[file.uri]
+            val label = if (aiLabel.isNullOrBlank() || aiLabel == ruleLabel) ruleLabel else "Documents/$aiLabel"
+            val destination = if (label == ruleLabel) ruleDestination else "Phone/$label/${file.fileName}"
+            OrganizationSuggestion(
+                source = file,
+                destinationLabel = label,
+                destinationPath = destination,
+                reason = if (aiLabel != null && aiLabel != ruleLabel) "On-device AI suggested $aiLabel from the filename and safe metadata; review before approval." else reasonFor(file, label)
+            )
+        }
     }
 
     private fun reasonFor(file: FileEntity, destination: String): String = when {

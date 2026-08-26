@@ -23,6 +23,9 @@ interface FileDao {
     @Query("SELECT * FROM files ORDER BY modifiedTime DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<FileEntity>>
 
+    @Query("SELECT * FROM files ORDER BY modifiedTime DESC LIMIT :limit")
+    suspend fun getRecent(limit: Int): List<FileEntity>
+
     @Query("SELECT * FROM files WHERE displayPath LIKE '%' || :query || '%' OR fileName LIKE '%' || :query || '%' ORDER BY modifiedTime DESC LIMIT :limit")
     suspend fun search(query: String, limit: Int = 1000): List<FileEntity>
 
@@ -80,7 +83,7 @@ interface ProtectionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(folder: ProtectedFolderEntity)
 
-    @Query("DELETE FROM protected_folders WHERE key = :key")
+    @Query("DELETE FROM protected_folders WHERE folder_key = :key")
     suspend fun delete(key: String)
 
     @Query("SELECT EXISTS(SELECT 1 FROM protected_folders WHERE :path LIKE folder_key || '%' AND state = 'protected')")

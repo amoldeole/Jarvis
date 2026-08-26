@@ -10,7 +10,7 @@ import java.util.Locale
  */
 object FileClassifier {
     private val imageExtensions = setOf("jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tif", "tiff", "dng", "raw")
-    private val videoExtensions = setOf("mp4", "m4v", "mov", "mkv", "webm", "avi", "3gp", "flv", "wmv", "mpeg", "mpg", "ts")
+    private val videoExtensions = setOf("mp4", "m4v", "mov", "mkv", "webm", "avi", "3gp", "flv", "wmv", "mpeg", "mpg")
     private val audioExtensions = setOf("mp3", "m4a", "aac", "wav", "flac", "ogg", "opus", "amr", "mid", "midi", "wma")
     private val documentExtensions = setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv", "json", "xml", "md", "rtf", "odt", "ods", "odp", "kt", "java", "py", "js", "ts", "html", "css", "c", "cpp", "h", "log")
     private val archiveExtensions = setOf("zip", "rar", "7z", "tar", "gz", "bz2", "xz", "iso", "cab", "apk", "apkm", "xapk", "aab", "dmg", "msi", "exe")

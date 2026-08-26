@@ -6,12 +6,11 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import kotlin.random.Random
-
 /** Small, dependency-free Keystore wrapper used for LAN pairing secrets. */
 class SecureTokenStore(private val context: Context) {
     private val preferences = context.getSharedPreferences("secure_secrets", Context.MODE_PRIVATE)
@@ -19,11 +18,18 @@ class SecureTokenStore(private val context: Context) {
 
     @Synchronized
     fun getOrCreateServerToken(): String {
-        preferences.getString("server_token", null)?.let { encrypted ->
-            runCatching { return decrypt(encrypted) }
+        val stored = preferences.getString("server_token", null)
+        if (stored != null) {
+            try {
+                return decrypt(stored)
+            } catch (_: Throwable) {
+                // A stale/invalid ciphertext is replaced with a fresh token below.
+            }
         }
+        val alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        val random = SecureRandom()
         val token = buildString {
-            repeat(32) { append("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".random()) }
+            repeat(32) { append(alphabet[random.nextInt(alphabet.length)]) }
         }
         preferences.edit().putString("server_token", encrypt(token)).apply()
         return token
@@ -65,7 +71,7 @@ class SecureTokenStore(private val context: Context) {
             getKey(),
             GCMParameterSpec(128, bytes.copyOfRange(0, 12))
         )
-        return cipher.doFinal(bytes.copyOfRange(12, bytes.size)).toString(StandardCharsets.UTF_8)
+        return String(cipher.doFinal(bytes.copyOfRange(12, bytes.size)), StandardCharsets.UTF_8)
     }
 }
 

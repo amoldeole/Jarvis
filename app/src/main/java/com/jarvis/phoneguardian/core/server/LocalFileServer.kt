@@ -103,6 +103,7 @@ class LocalFileServerService : Service() {
 
     private fun handle(socket: Socket, token: String) {
         socket.use { client ->
+            client.soTimeout = 15_000
             if (!isPrivatePeer(client.inetAddress)) return
             val input = BufferedInputStream(client.getInputStream())
             val request = readAsciiLine(input) ?: return
@@ -178,7 +179,7 @@ class LocalFileServerService : Service() {
     }
 
     private fun homePage(token: String): String {
-        val files = runBlocking { database.fileDao().getAll().take(500) }
+        val files = runBlocking { database.fileDao().getRecent(500) }
         val rows = files.joinToString("\n") { file ->
             val encoded = java.net.URLEncoder.encode(file.uri, "UTF-8")
             "<li><b>${escapeHtml(file.fileName)}</b> <small>${file.size / 1024} KB · ${escapeHtml(file.mediaType)}</small> <a href=\"/download?uri=$encoded&amp;token=$token\">Download</a><br><small>${escapeHtml(file.displayPath)}</small></li>"
